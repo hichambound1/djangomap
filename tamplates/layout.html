@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mapapp</title>
+    
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.2/mapbox-gl-draw.css" type="text/css">
+<style>
+
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; 
+            top: 0; 
+            bottom: 0;
+            right: 0;
+            width: 80%; 
+        }
+        .calculation-box {
+            height: 175px;
+            width: 250px;
+            position: absolute;
+            bottom: 40px;
+            left: 310px;
+            background-color: rgba(88, 75, 75, 0.9);
+            padding: 15px;
+            text-align: center;
+        }
+    
+        p {
+            font-family: 'Open Sans';
+            margin: 0;
+            font-size: 13px;
+        }
+        .list{
+            width: 20%;
+            background: rgb(252, 244, 244);
+        }
+        .list ul {
+            list-style: none;
+            
+        }
+        .list ul li :hover{
+            background: rgb(2, 206, 63);
+            padding: 12px;
+            color: white;
+
+        }
+        .list ul li p{
+            padding: 12px;
+            font-family:Georgia, 'Times New Roman', Times, serif;
+            font-size: large;
+        }
+        form input, label,button{
+            display: block;
+        }
+        button{
+            padding: 4px 12px 4px 12px;
+            background: rgb(13, 245, 214);
+            border: none;
+            border-radius: 2px;
+        }
+
+</style>
+
+</head>
+<body>
+  
+    <div class="container-fluid">
+    
+            {% block content %}
+    
+            {% endblock %}
+        
+    </div>
+
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.2/mapbox-gl-draw.js"></script>
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiaGljaGFtLTQzIiwiYSI6ImNrb2lpb3p6YjAyZTQydW53MTRnZHhrcTYifQ.e7Pas7184hVMFQKbKt4reA';
+        var map = new mapboxgl.Map({
+            container: 'map', // container id
+            style: 'mapbox://styles/hicham-43/ckoij6l7608w018mwz3j9lzl7', //hosted style id
+            center: [-91.874, 42.76], // starting position
+            zoom: 12 // starting zoom
+        });
+    
+        var draw = new MapboxDraw({
+            displayControlsDefault: false,
+            controls: {
+                polygon: true,
+                trash: true
+            },
+            defaultMode: 'draw_polygon'
+        });
+        map.addControl(draw);
+    
+        map.on('draw.create', updateArea);
+        map.on('draw.delete', updateArea);
+        map.on('draw.update', updateArea);
+    
+        function updateArea(e) {
+            var data = draw.getAll();
+            console.log(data);
+            
+            var answer = document.getElementById('calculated-area');
+            if (data.features.length > 0) {
+                var area = turf.area(data);
+                // restrict to area to 2 decimal points
+                var rounded_area = Math.round(area * 100) / 100;
+                dataa = data.features[0].geometry.coordinates[0];
+                const obj = Object.assign({}, dataa);
+                console.log(obj[0])
+                
+                for (i = 0; i < dataa.length; i++) {
+                    obj[i] = Object.assign({}, obj[i]);
+                    console.log(obj[i]);
+                 
+                }
+                console.log(obj);
+
+                answer.innerHTML =
+                  
+                        '<form action="/mapapp/add" method="post">'+
+                        '{% csrf_token%}'+
+                        '<input type="text" placeholder="name of terratory" name="name">'+
+                        "<input type='hidden' name='data' value='"+JSON.stringify(obj)+"'>"+
+                        '<br><button>add</button>'
+                        '</form>'
+                    rounded_area +
+                    '<p>square meters</p>';
+            } else {
+                answer.innerHTML = '';
+                if (e.type !== 'draw.delete')
+                    alert('Use the draw tools to draw a polygon!');
+            }
+        }
+    </script>
+    
+
+
+</body>
+</html>
